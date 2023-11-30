@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import re
 import secrets
 import struct
 import time
@@ -107,7 +108,11 @@ def get_media_obj(
 
 
 def replace_caption(
-    caption: Optional[str], caption_replace_dict, default_caption: Optional[str] = None
+    caption: Optional[str],
+    caption_replace_dict,
+    default_caption: Optional[str] = None,
+    caption_regex_replace_dict=None,
+    default_additional_caption: Optional[str] = None,
 ):
     """
     Replaces certain items in a caption string
@@ -125,6 +130,16 @@ def replace_caption(
             caption = caption.replace(item, caption_replace_dict[item])
     else:
         caption = default_caption
+
+    if not caption:
+        return default_additional_caption
+
+    if caption_regex_replace_dict:
+        for item in caption_regex_replace_dict:
+            caption = re.sub(item, caption_regex_replace_dict[item], caption)
+
+    if default_additional_caption:
+        caption += default_additional_caption
     return caption
 
 
@@ -368,7 +383,11 @@ async def _upload_signal_message(
         )
 
     caption = replace_caption(
-        message.caption, app.caption_replace_dict, app.default_forward_caption
+        message.caption,
+        app.caption_replace_dict,
+        app.default_forward_caption,
+        app.caption_regex_replace_dict,
+        app.default_forward_additional_caption,
     )
     if message.video:
         # Download thumbnail
@@ -499,7 +518,11 @@ async def forward_multi_media(
         caption = app.get_caption_name(node.chat_id, message.media_group_id)
 
     caption = replace_caption(
-        caption, app.caption_replace_dict, app.default_forward_caption
+        caption,
+        app.caption_replace_dict,
+        app.default_forward_caption,
+        app.caption_regex_replace_dict,
+        app.default_forward_additional_caption,
     )
 
     media_obj = get_media_obj(message, file_name, caption)
