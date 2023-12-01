@@ -479,6 +479,18 @@ async def _upload_telegram_chat_message(
     """
     await app.forward_limit_call.wait(node)
 
+    caption = message.caption
+    if not caption:
+        caption = app.get_caption_name(node.chat_id, message.media_group_id)
+
+    caption = replace_caption(
+        caption,
+        app.caption_replace_dict,
+        app.default_forward_caption,
+        app.caption_regex_replace_dict,
+        app.default_forward_additional_caption,
+    )
+
     if not message.media_group_id:
         if not file_name:
             await forward_messages(
@@ -487,6 +499,7 @@ async def _upload_telegram_chat_message(
                 node.chat_id,
                 message.id,
                 drop_author=True,
+                caption=caption,
             )
         else:
             await _upload_signal_message(
@@ -500,7 +513,9 @@ async def _upload_telegram_chat_message(
             )
         return ForwardStatus.SuccessForward
 
-    return await forward_multi_media(client, upload_user, app, node, message, file_name)
+    return await forward_multi_media(
+        client, upload_user, app, node, message, caption, file_name
+    )
 
 
 # pylint: disable=R0912
@@ -510,21 +525,10 @@ async def forward_multi_media(
     app: Application,
     node: TaskNode,
     message: pyrogram.types.Message,
+    caption: str = None,
     file_name: str = None,
 ):
     """Forward multi media by cache"""
-    caption = message.caption
-    if not caption:
-        caption = app.get_caption_name(node.chat_id, message.media_group_id)
-
-    caption = replace_caption(
-        caption,
-        app.caption_replace_dict,
-        app.default_forward_caption,
-        app.caption_regex_replace_dict,
-        app.default_forward_additional_caption,
-    )
-
     media_obj = get_media_obj(message, file_name, caption)
     if not file_name:
         media = getattr(message, message.media.value)
@@ -1222,6 +1226,7 @@ async def forward_messages(
     schedule_date: datetime = None,
     protect_content: bool = None,
     drop_author: bool = None,
+    caption: str = None,
 ) -> Union["types.Message", List["types.Message"]]:
     """Forward messages of any kind."""
 
@@ -1259,5 +1264,10 @@ async def forward_messages(
                 # pylint: disable=W0212
                 await types.Message._parse(client, i.message, users, chats)
             )
+
+    if caption and not is_iterable and forwarded_messages:
+        await client.edit_message_caption(
+            chat_id, forwarded_messages[0].id, caption=caption
+        )
 
     return types.List(forwarded_messages) if is_iterable else forwarded_messages[0]
