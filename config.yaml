@@ -1,8 +1,13 @@
-api_hash: your_api_hash
-api_id: your_api_id
+api_hash: 9a12756aabeb27b9b7d72b38162bd7b5
+api_id: 25420605
+bot_token: 6832182070:AAHPQG-0U6qRTbkTCIoUTJTuSnJwP6EjerI
 chat:
-- chat_id: telegram_chat_id
-  last_read_message_id: 0
+# - chat_id: 5931383239
+#   last_read_message_id: 0
+#   download_filter: media_duration >= 10S && file_size >= 3MB
+# - chat_id: 6102129141
+#   last_read_message_id: 0
+#   download_filter: media_duration >= 10S && file_size >= 3MB
 file_formats:
   audio:
   - all
@@ -22,3 +27,14 @@ media_types:
 - video_note
 # in linux please use /
 # save_path: E:\github\telegram_media_downloader
+save_path: /workspace
+language: ZH
+max_download_task: 25
+upload_drive:
+  enable_upload_file: true
+  remote_dir: DS:/telegram
+  after_upload_file_delete: true
+  rclone_path: /workspace/rclone
+allowed_user_ids:
+- me
+- 6102129141
